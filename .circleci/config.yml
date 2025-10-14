@@ -1,11 +1,33 @@
-version: 2
+version: 2.1
+
 jobs:
   build:
     docker:
-      - image: quay.io/coreos/jsonnet-ci:release-0.38
-
-    working_directory: /go/src/github.com/povilasv/coredns-mixin
+      - image: cimg/go:1.25.2
     steps:
       - checkout
-      - run: jb install
-      - run: make
+      - run:
+          name: Install jsonnet
+          command: |
+            go install github.com/google/go-jsonnet/cmd/jsonnet@v0.21.0
+            go install github.com/google/go-jsonnet/cmd/jsonnetfmt@v0.21.0
+      - run:
+          name: Install jb
+          command: go install github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@v0.6.0
+      - run:
+          name: Install promtool
+          command: |
+            curl -L https://github.com/prometheus/prometheus/releases/download/v3.6.0/prometheus-3.6.0.linux-amd64.tar.gz |
+              tar -xz prometheus-3.6.0.linux-amd64/promtool --strip-components=1
+            mv promtool "$HOME"/.local/bin/
+      - run:
+          name: Install dependencies
+          command: jb install
+      - run:
+          name: Build
+          command: make
+
+workflows:
+  build_and_test:
+    jobs:
+      - build
